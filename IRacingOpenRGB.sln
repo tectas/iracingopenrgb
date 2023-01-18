@@ -2,9 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IRacingOpenRGB", "IRacingOpenRGB\IRacingOpenRGB.csproj", "{46AB7B83-0E56-4971-80F9-ED21FEE8C3A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRGB.NET", "OpenRGB.NET\OpenRGB.NET.csproj", "{D6E3CAD8-E385-4853-B269-2021321B2A4F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iRacingSDK", "iRacingSDK.Net\iRacingSDK.csproj", "{5422AE20-F220-4BE1-9E61-5296981ABB5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRGB.NET", "OpenRGB.Net\OpenRGB.NET\OpenRGB.NET.csproj", "{54BFCCC8-2D21-433D-AA46-F97473791F97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,13 +16,13 @@ Global
 		{46AB7B83-0E56-4971-80F9-ED21FEE8C3A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46AB7B83-0E56-4971-80F9-ED21FEE8C3A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46AB7B83-0E56-4971-80F9-ED21FEE8C3A8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D6E3CAD8-E385-4853-B269-2021321B2A4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D6E3CAD8-E385-4853-B269-2021321B2A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D6E3CAD8-E385-4853-B269-2021321B2A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D6E3CAD8-E385-4853-B269-2021321B2A4F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5422AE20-F220-4BE1-9E61-5296981ABB5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54BFCCC8-2D21-433D-AA46-F97473791F97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54BFCCC8-2D21-433D-AA46-F97473791F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54BFCCC8-2D21-433D-AA46-F97473791F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54BFCCC8-2D21-433D-AA46-F97473791F97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

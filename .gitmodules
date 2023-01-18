@@ -1,0 +1,6 @@
+[submodule "iRacingSDK.Net"]
+	path = iRacingSDK.Net
+	url = https://github.com/vipoo/iRacingSDK.Net
+[submodule "OpenRGB.Net"]
+	path = OpenRGB.Net
+	url = https://github.com/diogotr7/OpenRGB.NET.git

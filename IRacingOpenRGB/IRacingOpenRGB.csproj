@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\iRacingSDK.Net\iRacingSDK.csproj" />
-    <ProjectReference Include="..\OpenRGB.NET\OpenRGB.NET.csproj" />
+    <ProjectReference Include="..\OpenRGB.Net\OpenRGB.NET\OpenRGB.NET.csproj" />
   </ItemGroup>
 
 </Project>
