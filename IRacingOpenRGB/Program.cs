@@ -1,39 +1,60 @@
-﻿using iRacingSDK;
-using OpenRGB.NET;
+﻿using IRacingOpenRGB;
+using iRacingSDK;
 using OpenRGB.NET.Models;
+using System;
+using System.Linq;
 
-using var client = new OpenRGBClient(name: "IRacing RGB Client", autoconnect: true, timeout: 1000);
-var iRacingCon = new iRacingConnection();
-
-var devices = client.GetAllControllerData();
-
-void RacingConOnNewSessionData(DataSample dataSample)
+try
 {
-    var speed = dataSample.Telemetry.Speed;
-    foreach (var device in devices)
-    {
-        switch (speed)
-        {
-            case > 200:
-                device.Update(new Color[]
-                {
-                    new(255, 0, 0)
-                });
-                break;
-            case > 100:
-                device.Update(new Color[]
-                {
-                    new(0, 0, 255)
-                });
-                break;
-            default:
-                device.Update(new Color[]
-                {
-                    new(0, 255, 0)
-                });
-                break;
-        }
-    }
+    using var iRacingRGBWrapper = new ConnectionClientWrapper(); // Uses default OnNewSessionData from ConnectionClientWrapper, for changes has to be changed there
+    iRacingRGBWrapper.CheckConnections();
+    Console.ReadLine();
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+    Console.WriteLine(ex.StackTrace);
+    Console.WriteLine("Confirm to close window...");
+    Console.ReadLine();
 }
 
-iRacingCon.NewSessionData += RacingConOnNewSessionData;
+// Different approach to use a delegate instead of the default implementation for new session data
+// try
+// {
+//     using var iRacingRGBWrapper = new ConnectionClientWrapper();
+//     const string message = "This is a different message than in the connection client wrapper implementation, it's special, really, look how fancy!";
+//     
+//     void OnNewSessionData(DataSample dataSample)
+//     {
+//         try
+//         {
+//             var speed = dataSample.Telemetry.Speed;
+//             foreach (var device in iRacingRGBWrapper.RGBDevices)
+//             {
+//                 foreach (var zone in device.Zones)
+//                 {
+//                     zone.Update(Color.GetHueRainbow((int)zone.LedCount).ToArray());
+//                 }
+//             }
+//         }
+//         catch (Exception ex)
+//         {
+//             Console.WriteLine(ex.Message);
+//             Console.WriteLine(ex.StackTrace);
+//         }
+//         Console.WriteLine(message);
+//     }
+//
+//     iRacingRGBWrapper.IRacingNewSessionDataHandler = OnNewSessionData;
+//     
+//     iRacingRGBWrapper.CheckConnections();
+//     Console.ReadLine();
+//
+// }
+// catch (Exception ex)
+// {
+//     Console.WriteLine(ex.Message);
+//     Console.WriteLine(ex.StackTrace);
+//     Console.WriteLine("Confirm to close window...");
+//     Console.ReadLine();
+// }
