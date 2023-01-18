@@ -1,0 +1,10 @@
+**/bin/*
+**/obj/*
+**/*.suo
+packages/**/*
+!packages/repositories.config
+TestResult.xml
+**/*.csproj.user
+*.nupkg
+.vs
+.idea
