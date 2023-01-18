@@ -41,8 +41,6 @@ namespace IRacingOpenRGB
 
             IRacingNewSessionDataHandler = OnNewSessionData;
 
-            RacingConnection.NewSessionData += IRacingNewSessionDataHandler;
-
             RGBClientName = rgbClientName;
             RGBClient = new OpenRGBClient(name: rgbClientName, autoconnect: true, timeout: 1000);
 
