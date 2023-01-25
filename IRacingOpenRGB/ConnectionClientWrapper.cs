@@ -2,6 +2,8 @@
 using OpenRGB.NET;
 using OpenRGB.NET.Models;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IRacingOpenRGB
 {
@@ -11,22 +13,25 @@ namespace IRacingOpenRGB
         public iRacingConnection RacingConnection { get; init; }
         public Action<DataSample> IRacingNewSessionDataHandler
         {
-            get { return iRacingNewSessionDataHandler;}
+            get { return _iRacingNewSessionDataHandler; }
             set
             {
                 if (RacingConnection != null)
                 {
                     if (IRacingNewSessionDataHandler != null)
-                        RacingConnection.NewSessionData -= iRacingNewSessionDataHandler;
+                        RacingConnection.NewSessionData -= _iRacingNewSessionDataHandler;
 
                     if (value != null)
                         RacingConnection.NewSessionData += value;
                 }
 
-                iRacingNewSessionDataHandler = value;
+                _iRacingNewSessionDataHandler = value;
             }
         }
-        private Action<DataSample> iRacingNewSessionDataHandler;
+        private Action<DataSample> _iRacingNewSessionDataHandler;
+
+        private Task _telemetryLoopTask;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public string RGBClientName { get; set; }
         public OpenRGBClient RGBClient { get; init; }
@@ -59,6 +64,7 @@ namespace IRacingOpenRGB
             {
                 RacingConnection.NewSessionData -= IRacingNewSessionDataHandler;
                 RGBClient.Dispose();
+                _telemetryLoopTask?.Dispose();
 
                 _disposed = true;
             }
@@ -79,40 +85,123 @@ namespace IRacingOpenRGB
             return RGBClient.Connected && RacingConnection.IsConnected;
         }
 
+        public void StartTelemetryLoop()
+        {
+            if (_telemetryLoopTask is { IsCanceled: false })
+                return;
+
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            _telemetryLoopTask = Task.Factory.StartNew(() =>
+            {
+                if (cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                Console.WriteLine("Telemetry loop started");
+
+                foreach (var data in RacingConnection.GetDataFeed()
+                   .WithCorrectedPercentages()
+                   .WithCorrectedDistances()
+                   .WithPitStopCounts())
+                {
+                    if (cancellationTokenSource.IsCancellationRequested)
+                        return;
+
+                    SetRGB(data.Telemetry.SessionFlags);
+
+                    Console.WriteLine(data.Telemetry.ToString());
+                    Console.WriteLine("RGB set by loop");
+
+                    if (cancellationTokenSource.IsCancellationRequested)
+                        return;
+
+                    //Trace.WriteLine(data.SessionData.Raw);
+
+                    //System.Diagnostics.Debugger.Break();
+                }
+            }, cancellationTokenSource.Token);
+
+            _cancellationTokenSource = cancellationTokenSource;
+        }
+
+        public void StopTelemetryLoop()
+        {
+            _cancellationTokenSource?.Cancel();
+            _telemetryLoopTask = null;
+
+            Console.WriteLine("Telemetry loop stopped");
+        }
+
         public void OnNewSessionData(DataSample dataSample)
         {
             try
             {
-                var speed = dataSample.Telemetry.Speed;
-                foreach (var device in RGBDevices)
-                {
-                    switch (speed)
-                    {
-                        case > 200:
-                            device.Update(new Color[]
-                            {
-                                new(255, 0, 0)
-                            });
-                            break;
-                        case > 100:
-                            device.Update(new Color[]
-                            {
-                                new(0, 0, 255)
-                            });
-                            break;
-                        default:
-                            device.Update(new Color[]
-                            {
-                                new(0, 255, 0)
-                            });
-                            break;
-                    }
-                }
+                var flag = dataSample.Telemetry.SessionFlags;
+                SetRGB(flag);
+                Console.WriteLine("RGB set by event");
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private void SetRGB(SessionFlags flag)
+        {
+            foreach (var device in RGBDevices)
+            {
+                switch (flag)
+                {
+                    case SessionFlags.black:
+                        device.Update(new Color[]
+                        {
+                                new(0, 0, 0)
+                        });
+                        break;
+                    case SessionFlags.blue:
+                        device.Update(new Color[]
+                        {
+                                new(0, 0, 255)
+                        });
+                        break;
+                    case SessionFlags.green:
+                        device.Update(new Color[]
+                        {
+                                new(0, 255, 0)
+                        });
+                        break;
+                    case SessionFlags.caution:
+                        device.Update(new Color[]
+                        {
+                                new(255, 255, 0)
+                        });
+                        break;
+                    case SessionFlags.yellow:
+                        device.Update(new Color[]
+                        {
+                                new(255, 215, 0)
+                        });
+                        break;
+                    case SessionFlags.white:
+                        device.Update(new Color[]
+                        {
+                                new(255,255,255)
+                        });
+                        break;
+                    case SessionFlags.startGo:
+                        device.Update(new Color[]
+                        {
+                                new(0, 139, 0)
+                        });
+                        break;
+                    default:
+                        device.Update(new Color[]
+                        {
+                                new(0, 255, 0)
+                        });
+                        break;
+                }
             }
         }
     }
