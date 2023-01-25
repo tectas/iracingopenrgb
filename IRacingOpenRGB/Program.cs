@@ -7,7 +7,8 @@ using System.Linq;
 try
 {
     using var iRacingRGBWrapper = new ConnectionClientWrapper(); // Uses default OnNewSessionData from ConnectionClientWrapper, for changes has to be changed there
-    iRacingRGBWrapper.CheckConnections();
+    //iRacingRGBWrapper.CheckConnections();
+    iRacingRGBWrapper.TelemetryLoop();    
     Console.ReadLine();
 }
 catch (Exception ex)

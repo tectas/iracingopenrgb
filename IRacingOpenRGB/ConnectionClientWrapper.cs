@@ -79,25 +79,89 @@ namespace IRacingOpenRGB
             return RGBClient.Connected && RacingConnection.IsConnected;
         }
 
+        public void TelemetryLoop()
+        {
+            System.Threading.Tasks.Task.Factory.StartNew(() =>
+            {
+                 foreach (var data in RacingConnection.GetDataFeed()
+                    .WithCorrectedPercentages()
+                    .WithCorrectedDistances()
+                    .WithPitStopCounts())
+                 {
+
+                    var tele = data.Telemetry;
+                    SetRGB(tele.SessionFlags);
+
+                    Console.WriteLine(data.Telemetry.ToString());
+                    Console.WriteLine("RGB set by loop");
+                    //Trace.WriteLine(data.SessionData.Raw);
+
+                    //System.Diagnostics.Debugger.Break();
+                 }
+            });
+        }
+
         public void OnNewSessionData(DataSample dataSample)
         {
             try
             {
-                var speed = dataSample.Telemetry.Speed;
-                foreach (var device in RGBDevices)
+                var flag = dataSample.Telemetry.SessionFlags;
+                SetRGB(flag);
+                Console.WriteLine("RGB set by event");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        private void SetRGB(Telemetry.SessionFlags flag)
+        {
+            foreach (var device in RGBDevices)
                 {
-                    switch (speed)
+                    switch (flag)
                     {
-                        case > 200:
+                        case SessionFlags.black:
                             device.Update(new Color[]
                             {
-                                new(255, 0, 0)
-                            });
+                                new(0, 0, 0)
+                            }) ;
                             break;
-                        case > 100:
+                        case SessionFlags.blue:
                             device.Update(new Color[]
                             {
                                 new(0, 0, 255)
+                            });
+                            break;
+                        case SessionFlags.green:
+                            device.Update(new Color[]
+                            {
+                                new(0, 255, 0)
+                            });
+                            break;
+                        case SessionFlags.caution:
+                            device.Update(new Color[]
+                            {
+                                new(255, 255, 0)
+                            });
+                            break;
+                        case SessionFlags.yellow:
+                            device.Update(new Color[]
+                            {
+                                new(255, 215, 0)
+                            });
+                            break;
+                        case SessionFlags.white:
+                            device.Update(new Color[]
+                            {
+                                new(255,255,255)
+                            });
+                            break;
+                        case SessionFlags.startGo:
+                            device.Update(new Color[]
+                            {
+                                new(0, 139, 0)
                             });
                             break;
                         default:
@@ -108,12 +172,6 @@ namespace IRacingOpenRGB
                             break;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
-            }
         }
     }
 }
