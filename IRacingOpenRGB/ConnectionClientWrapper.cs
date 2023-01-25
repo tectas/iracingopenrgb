@@ -11,7 +11,7 @@ namespace IRacingOpenRGB
         public iRacingConnection RacingConnection { get; init; }
         public Action<DataSample> IRacingNewSessionDataHandler
         {
-            get { return iRacingNewSessionDataHandler;}
+            get { return iRacingNewSessionDataHandler; }
             set
             {
                 if (RacingConnection != null)
@@ -83,21 +83,19 @@ namespace IRacingOpenRGB
         {
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
-                 foreach (var data in RacingConnection.GetDataFeed()
-                    .WithCorrectedPercentages()
-                    .WithCorrectedDistances()
-                    .WithPitStopCounts())
-                 {
-
-                    var tele = data.Telemetry;
-                    SetRGB(tele.SessionFlags);
+                foreach (var data in RacingConnection.GetDataFeed()
+                   .WithCorrectedPercentages()
+                   .WithCorrectedDistances()
+                   .WithPitStopCounts())
+                {
+                    SetRGB(data.Telemetry.SessionFlags);
 
                     Console.WriteLine(data.Telemetry.ToString());
                     Console.WriteLine("RGB set by loop");
                     //Trace.WriteLine(data.SessionData.Raw);
 
                     //System.Diagnostics.Debugger.Break();
-                 }
+                }
             });
         }
 
@@ -116,62 +114,62 @@ namespace IRacingOpenRGB
             }
         }
 
-        private void SetRGB(Telemetry.SessionFlags flag)
+        private void SetRGB(SessionFlags flag)
         {
             foreach (var device in RGBDevices)
+            {
+                switch (flag)
                 {
-                    switch (flag)
-                    {
-                        case SessionFlags.black:
-                            device.Update(new Color[]
-                            {
+                    case SessionFlags.black:
+                        device.Update(new Color[]
+                        {
                                 new(0, 0, 0)
-                            }) ;
-                            break;
-                        case SessionFlags.blue:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.blue:
+                        device.Update(new Color[]
+                        {
                                 new(0, 0, 255)
-                            });
-                            break;
-                        case SessionFlags.green:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.green:
+                        device.Update(new Color[]
+                        {
                                 new(0, 255, 0)
-                            });
-                            break;
-                        case SessionFlags.caution:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.caution:
+                        device.Update(new Color[]
+                        {
                                 new(255, 255, 0)
-                            });
-                            break;
-                        case SessionFlags.yellow:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.yellow:
+                        device.Update(new Color[]
+                        {
                                 new(255, 215, 0)
-                            });
-                            break;
-                        case SessionFlags.white:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.white:
+                        device.Update(new Color[]
+                        {
                                 new(255,255,255)
-                            });
-                            break;
-                        case SessionFlags.startGo:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    case SessionFlags.startGo:
+                        device.Update(new Color[]
+                        {
                                 new(0, 139, 0)
-                            });
-                            break;
-                        default:
-                            device.Update(new Color[]
-                            {
+                        });
+                        break;
+                    default:
+                        device.Update(new Color[]
+                        {
                                 new(0, 255, 0)
-                            });
-                            break;
-                    }
+                        });
+                        break;
                 }
+            }
         }
     }
 }
