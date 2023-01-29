@@ -1,7 +1,9 @@
 ﻿using iRacingSDK;
 using OpenRGB.NET;
+using OpenRGB.NET.Enums;
 using OpenRGB.NET.Models;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -50,6 +52,7 @@ namespace IRacingOpenRGB
             RGBClient = new OpenRGBClient(name: rgbClientName, autoconnect: true, timeout: 1000);
 
             RGBDevices = RGBClient.GetAllControllerData();
+            //var devices = RGBClient.GetAllControllerData();
         }
 
         public void Dispose()
@@ -109,7 +112,7 @@ namespace IRacingOpenRGB
 
                     SetRGB(data.Telemetry.SessionFlags);
 
-                    Console.WriteLine(data.Telemetry.ToString());
+                    Console.WriteLine(data.Telemetry.SessionFlags.ToString());
                     Console.WriteLine("RGB set by loop");
 
                     if (cancellationTokenSource.IsCancellationRequested)
@@ -151,58 +154,157 @@ namespace IRacingOpenRGB
         {
             foreach (var device in RGBDevices)
             {
-                switch (flag)
+                if (flag.HasFlag(SessionFlags.blue))
                 {
-                    case SessionFlags.black:
-                        device.Update(new Color[]
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
                         {
-                                new(0, 0, 0)
-                        });
-                        break;
-                    case SessionFlags.blue:
-                        device.Update(new Color[]
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(0, 0, 255)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.green))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
                         {
-                                new(0, 0, 255)
-                        });
-                        break;
-                    case SessionFlags.green:
-                        device.Update(new Color[]
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 4, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(0, 255, 0)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.greenHeld))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
                         {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 4, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(0, 255, 0)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.caution))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 255, 0)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.cautionWaving))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 4, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 255, 0)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.yellow))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 215, 0)).ToArray());
+
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.yellowWaving))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i,4, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 215, 0)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.white))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 255, 255)).ToArray());
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.startGo))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
+                        {
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
+                            //RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(0, 255, 0)).ToArray());
+                            RGBClient.UpdateLeds(i, new Color[]
+{
                                 new(0, 255, 0)
-                        });
-                        break;
-                    case SessionFlags.caution:
-                        device.Update(new Color[]
+});
+                        }
+                    }
+                }
+                else if (flag.HasFlag(SessionFlags.repair))
+                {
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        for (int j = 0; j < RGBDevices[i].Modes.Length; j++)
                         {
-                                new(255, 255, 0)
-                        });
-                        break;
-                    case SessionFlags.yellow:
-                        device.Update(new Color[]
-                        {
-                                new(255, 215, 0)
-                        });
-                        break;
-                    case SessionFlags.white:
-                        device.Update(new Color[]
-                        {
-                                new(255,255,255)
-                        });
-                        break;
-                    case SessionFlags.startGo:
-                        device.Update(new Color[]
-                        {
-                                new(0, 139, 0)
-                        });
-                        break;
-                    default:
-                        device.Update(new Color[]
-                        {
-                                new(0, 255, 0)
-                        });
-                        break;
+                            var mode = RGBDevices[i].Modes[j];
+                            var len = (int)mode.ColorMax;
+                            //RGBClient.SetMode(i, 0);
+                            //RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 0, 0)).ToArray());
+                            //                            RGBClient.UpdateLeds(i, new Color[]
+                            //{
+                            //                                new(255, 0, 0)
+                            //});
+                            RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, RGBDevices[i].Colors.Length).Select(_ => new Color(0, 255, 0)).ToArray());
+
+                        }
+                    }
+                }
+                else
+                {
+
+                    for (int i = 0; i < RGBDevices.Length; i++)
+                    {
+                        RGBClient.SetMode(i, 0);
+                        RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, RGBDevices[i].Colors.Length).Select(_ => new Color(255, 0, 0)).ToArray());
+                    }
                 }
             }
         }
-    }
+}
 }
