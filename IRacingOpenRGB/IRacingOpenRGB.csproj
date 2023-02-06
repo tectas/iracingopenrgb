@@ -10,4 +10,10 @@
     <ProjectReference Include="..\OpenRGB.Net\OpenRGB.NET\OpenRGB.NET.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.2</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

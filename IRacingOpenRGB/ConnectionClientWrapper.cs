@@ -1,17 +1,75 @@
 ﻿using iRacingSDK;
+using Newtonsoft.Json;
 using OpenRGB.NET;
 using OpenRGB.NET.Enums;
 using OpenRGB.NET.Models;
 using System;
+using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace IRacingOpenRGB
 {
+    public class ConcurrentBagJsonConverter<T> : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(ConcurrentBag<T>);
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (objectType == typeof(ConcurrentBag<T>))
+            {
+                var elements = new ConcurrentBag<T>();
+
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonToken.StartObject)
+                    {
+                    }
+                    else
+                        elements.Add(serializer.Deserialize<T>(reader));
+                }
+                return elements;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            if (value is ConcurrentBag<T> listVal)
+            {
+                writer.WriteStartObject();
+                foreach (var item in listVal)
+                {
+                    serializer.Serialize(writer, item);
+                }
+                writer.WriteEndObject();
+            }
+        }
+    }
+
+    public class TelemetryData
+    {
+
+        public ConcurrentBag<float> FuelUsePerHour
+        {
+            get { return _fuelUsePerHour; }
+            set { FuelUsePerHour = _fuelUsePerHour; }
+        }
+        private readonly ConcurrentBag<float> _fuelUsePerHour = new();
+    }
+
     public class ConnectionClientWrapper : IDisposable
     {
         public const string DefaultRGBClientName = "IRacing RGB Client";
+        public const string DefaultExportJSONFileName = "telemetry_export.json";
+        public const int ExportInterval = 5 * 60 * 1000;
+
         public iRacingConnection RacingConnection { get; init; }
         public Action<DataSample> IRacingNewSessionDataHandler
         {
@@ -32,13 +90,21 @@ namespace IRacingOpenRGB
         }
         private Action<DataSample> _iRacingNewSessionDataHandler;
 
-        private Task _telemetryLoopTask;
-        private CancellationTokenSource _cancellationTokenSource;
+        private Task _rgbTelemetryLoopTask;
+        private Task _fuelTelemetryLoopTask;
+        private Task _exportTask;
+
+        private CancellationTokenSource _rgbCancellationTokenSource;
+
+        private CancellationTokenSource _fuelCancellationTokenSource;
+        private CancellationTokenSource _exportCancellationTokenSource;
 
         public string RGBClientName { get; set; }
         public OpenRGBClient RGBClient { get; init; }
 
         public Device[] RGBDevices { get; init; }
+
+        public TelemetryData TelemetryData { get; set; }
 
         private bool _disposed = false;
 
@@ -48,10 +114,12 @@ namespace IRacingOpenRGB
 
             IRacingNewSessionDataHandler = OnNewSessionData;
 
-            RGBClientName = rgbClientName;
-            RGBClient = new OpenRGBClient(name: rgbClientName, autoconnect: true, timeout: 1000);
+            //RGBClientName = rgbClientName;
+            //RGBClient = new OpenRGBClient(name: rgbClientName, autoconnect: true, timeout: 1000);
 
-            RGBDevices = RGBClient.GetAllControllerData();
+            //RGBDevices = RGBClient.GetAllControllerData();
+
+            TelemetryData = new TelemetryData();
             //var devices = RGBClient.GetAllControllerData();
         }
 
@@ -67,7 +135,7 @@ namespace IRacingOpenRGB
             {
                 RacingConnection.NewSessionData -= IRacingNewSessionDataHandler;
                 RGBClient.Dispose();
-                _telemetryLoopTask?.Dispose();
+                _rgbTelemetryLoopTask?.Dispose();
 
                 _disposed = true;
             }
@@ -88,14 +156,14 @@ namespace IRacingOpenRGB
             return RGBClient.Connected && RacingConnection.IsConnected;
         }
 
-        public void StartTelemetryLoop()
+        public void StartRGBTelemetryLoop()
         {
-            if (_telemetryLoopTask is { IsCanceled: false })
+            if (_rgbTelemetryLoopTask is { IsCanceled: false })
                 return;
 
             var cancellationTokenSource = new CancellationTokenSource();
 
-            _telemetryLoopTask = Task.Factory.StartNew(() =>
+            _rgbTelemetryLoopTask = Task.Factory.StartNew(() =>
             {
                 if (cancellationTokenSource.IsCancellationRequested)
                     return;
@@ -103,9 +171,9 @@ namespace IRacingOpenRGB
                 Console.WriteLine("Telemetry loop started");
 
                 foreach (var data in RacingConnection.GetDataFeed()
-                   .WithCorrectedPercentages()
-                   .WithCorrectedDistances()
-                   .WithPitStopCounts())
+                    .WithCorrectedPercentages()
+                    .WithCorrectedDistances()
+                    .WithPitStopCounts())
                 {
                     if (cancellationTokenSource.IsCancellationRequested)
                         return;
@@ -124,15 +192,93 @@ namespace IRacingOpenRGB
                 }
             }, cancellationTokenSource.Token);
 
-            _cancellationTokenSource = cancellationTokenSource;
+            _rgbCancellationTokenSource = cancellationTokenSource;
         }
 
-        public void StopTelemetryLoop()
+        public void StopRGBTelemetryLoop()
         {
-            _cancellationTokenSource?.Cancel();
-            _telemetryLoopTask = null;
+            _rgbCancellationTokenSource?.Cancel();
+            _rgbTelemetryLoopTask = null;
 
             Console.WriteLine("Telemetry loop stopped");
+        }
+
+        public void StartFuelTelemetryLoop()
+        {
+            if (_fuelTelemetryLoopTask is { IsCanceled: false })
+                return;
+
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            _fuelTelemetryLoopTask = Task.Factory.StartNew(() =>
+            {
+                if (cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                Console.WriteLine("Fuel Telemetry loop started");
+
+                foreach (var data in RacingConnection.GetDataFeed()
+                    .WithCorrectedPercentages()
+                    .WithCorrectedDistances()
+                    .WithPitStopCounts())
+                {
+                    if (cancellationTokenSource.IsCancellationRequested)
+                        return;
+
+                    TelemetryData.FuelUsePerHour.Add(data.Telemetry.FuelUsePerHour);
+                }
+            }, cancellationTokenSource.Token);
+
+            _fuelCancellationTokenSource = cancellationTokenSource;
+        }
+
+        public void StopFuelTelemetryLoop()
+        {
+            _fuelCancellationTokenSource?.Cancel();
+            _fuelTelemetryLoopTask = null;
+
+            Console.WriteLine(" Fuel Telemetry loop stopped");
+        }
+
+        public void StartExportWorker()
+        {
+            if (_exportTask is { IsCanceled: false })
+                return;
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            
+            Console.WriteLine("Export loop started");
+            Console.WriteLine($"First export in {ExportInterval / 1000 / 60} minutes");
+            
+            _exportTask = Task.Factory.StartNew(() =>
+            {
+                cancellationTokenSource.Token.WaitHandle.WaitOne(ExportInterval);
+
+                using StreamWriter file = File.CreateText(DefaultExportJSONFileName);
+
+                if (cancellationTokenSource.IsCancellationRequested)
+                    return;
+                
+                JsonSerializer serializer = new JsonSerializer
+                {
+                    Formatting = Formatting.Indented,
+                    NullValueHandling = NullValueHandling.Ignore
+                };
+                serializer.Converters.Add(new ConcurrentBagJsonConverter<float>());
+                serializer.Serialize(file, TelemetryData);
+
+                Console.WriteLine($"File exported: {DateTime.Now.ToString()}");
+            }, cancellationTokenSource.Token);
+
+            _exportCancellationTokenSource = cancellationTokenSource;
+        }
+
+        public void StopExportWorker()
+        {
+            _exportCancellationTokenSource?.Cancel();
+            _exportCancellationTokenSource = null;
+
+            Console.WriteLine("Export loop stopped");
         }
 
         public void OnNewSessionData(DataSample dataSample)
@@ -241,7 +387,7 @@ namespace IRacingOpenRGB
                         {
                             var mode = RGBDevices[i].Modes[j];
                             var len = (int)mode.ColorMax;
-                            RGBClient.SetMode(i,4, speed: null, direction: null, colors: null);
+                            RGBClient.SetMode(i, 4, speed: null, direction: null, colors: null);
                             RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(255, 215, 0)).ToArray());
                         }
                     }
@@ -270,9 +416,9 @@ namespace IRacingOpenRGB
                             RGBClient.SetMode(i, 2, speed: null, direction: null, colors: null);
                             //RGBClient.UpdateLeds(i, colors: Enumerable.Range(0, len).Select(_ => new Color(0, 255, 0)).ToArray());
                             RGBClient.UpdateLeds(i, new Color[]
-{
+                            {
                                 new(0, 255, 0)
-});
+                            });
                         }
                     }
                 }
@@ -306,5 +452,5 @@ namespace IRacingOpenRGB
                 }
             }
         }
-}
+    }
 }

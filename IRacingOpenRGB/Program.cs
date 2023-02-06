@@ -8,9 +8,13 @@ try
 {
     using var iRacingRGBWrapper = new ConnectionClientWrapper(); // Uses default OnNewSessionData from ConnectionClientWrapper, for changes has to be changed there
     //iRacingRGBWrapper.CheckConnections();
-    iRacingRGBWrapper.StartTelemetryLoop();    
+    //iRacingRGBWrapper.StartRGBTelemetryLoop();
+    iRacingRGBWrapper.StartFuelTelemetryLoop();
+    iRacingRGBWrapper.StartExportWorker();
     Console.ReadLine();
-    iRacingRGBWrapper.StopTelemetryLoop();
+    iRacingRGBWrapper.StopExportWorker();
+    iRacingRGBWrapper.StopFuelTelemetryLoop();
+    //iRacingRGBWrapper.StopRGBTelemetryLoop();
 }
 catch (Exception ex)
 {
